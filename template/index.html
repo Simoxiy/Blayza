@@ -4,17 +4,31 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Artist</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <link
+      rel="icon"
+      href="https://png.pngtree.com/element_our/20190601/ourmid/pngtree-music-icon-image_1344442.jpg"
+    />
   </head>
 
   <body>
-    {{range .}}
-    <div>{{.Name}}</div>
-    
-    <a href="/art?id={{.Id}}"><img src="{{.Image}}" alt="" /></a>
-    <div>{{range .Members}} <br>{{.}} {{end}}</div>
-    <div>{{.CreationData}}</div>
-    <div>{{.FirstAlbum}}</div>
-    <br />
-    {{end}}
+    <nav class="nav-bar">Artists</nav>
+    <div class="Parrent-Container">
+      <div class="Container">
+        {{range .}}
+        <div class="Profile">
+          <div class="image">
+            <a href="/art?id={{.Id}}">
+              <img src="{{.Image}}" alt="{{.Name}}" />
+            </a>
+          </div>
+          <span class="Name">{{.Name}}</span>
+        </div>
+        {{end}}
+      </div>
+    </div>
+    <div class="github">
+      my github <a href="https://github.com/ysnbhb">YSNBHB </a>
+    </div>
   </body>
 </html>

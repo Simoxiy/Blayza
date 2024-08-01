@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strconv"
+	"sync"
 )
 
 func Artists(w http.ResponseWriter, r *http.Request) {
@@ -16,9 +18,11 @@ func Artists(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	artists := []Artist{}
-	GetData("https://groupietrackers.herokuapp.com/api/artists", &artists)
-	// w.Header().Add("Content-type", "application/json")
-	// json.NewEncoder(w).Encode(artists)
+	err := GetData("https://groupietrackers.herokuapp.com/api/artists", &artists)
+	if err != nil {
+		http.Error(w, "internal server error ", http.StatusInternalServerError)
+		return
+	}
 	tmp, err := template.ParseFiles("./template/index.html")
 	if err != nil {
 		http.Error(w, "internal server error ", http.StatusInternalServerError)
@@ -29,26 +33,29 @@ func Artists(w http.ResponseWriter, r *http.Request) {
 
 func Song(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	if id == "" {
-		http.Redirect(w, r, "/", http.StatusAccepted)
+	if len(r.URL.Query()) > 1 || id > "52" || id < "1" {
+		http.Error(w, "bad request 400", http.StatusBadRequest)
+		return
+	} else if _, err := strconv.Atoi(id); err != nil {
+		http.Error(w, "bad request 400", http.StatusBadRequest)
+		return
 	}
-	// var wg sync.WaitGroup
+	var wg sync.WaitGroup
 	artis := &Artis{}
 
 	fetcheData := func(url string, data any) {
-		// defer wg.Done()
+		defer wg.Done()
 		err := GetData(url, data)
 		if err != nil {
 			return
 		}
 	}
-	// var err error
-	// wg.Add(4)
+	wg.Add(4)
 	fetcheData(fmt.Sprintf("https://groupietrackers.herokuapp.com/api/artists/%v", id), &artis.Artist)
 	fetcheData(fmt.Sprintf("https://groupietrackers.herokuapp.com/api/locations/%v", id), &artis.Location)
 	fetcheData(fmt.Sprintf("https://groupietrackers.herokuapp.com/api/dates/%v", id), &artis.Date)
 	fetcheData(fmt.Sprintf("https://groupietrackers.herokuapp.com/api/relation/%v", id), &artis.Relatoin)
-	// wg.Wait()
+	wg.Wait()
 	if artis.Artist.Id == 0 || artis.Date.Id == 0 || artis.Location.Id == 0 || artis.Relatoin.Id == 0 {
 		http.Error(w, "internal server error ", http.StatusInternalServerError)
 		return
@@ -57,22 +64,31 @@ func Song(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(artis)
 }
 
+func Style(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/css/" {
+		http.NotFound(w, r)
+		return
+	}
+	styleserv := http.FileServer(http.Dir("style"))
+	http.StripPrefix("/css", styleserv).ServeHTTP(w, r)
+}
+
 func GetData(url string, data any) error {
 	resp, err := http.Get(url)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	} else if resp.StatusCode != http.StatusOK {
-		fmt.Println(resp.StatusCode)
 		return fmt.Errorf("errer")
 	}
 	defer resp.Body.Close()
-	fmt.Println(json.NewDecoder(resp.Body).Decode(data))
-	return nil
+	return json.NewDecoder(resp.Body).Decode(data)
 }
 
 func (r *Serve) Start() error {
 	http.HandleFunc("/", Artists)
 	http.HandleFunc("/art", Song)
+	http.HandleFunc("/api/", Api)
+	http.HandleFunc("/api/{id}", GetArtist)
+	http.HandleFunc("/css/", Style)
 	return http.ListenAndServe(r.Port, nil)
 }
