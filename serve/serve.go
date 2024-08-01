@@ -28,15 +28,16 @@ func Artists(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error ", http.StatusInternalServerError)
 		return
 	}
-	tmp.Execute(w, artists)
+	if err := tmp.Execute(w, artists); err != nil {
+		http.Error(w, "internal server error ", http.StatusInternalServerError)
+		return
+	}
 }
 
 func Song(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
-	if len(r.URL.Query()) > 1 || id > "52" || id < "1" {
-		http.Error(w, "bad request 400", http.StatusBadRequest)
-		return
-	} else if _, err := strconv.Atoi(id); err != nil {
+	numbreid, err := strconv.Atoi(id)
+	if len(r.URL.Query()) > 1 || numbreid > 52 || numbreid < 1 || err != nil {
 		http.Error(w, "bad request 400", http.StatusBadRequest)
 		return
 	}
@@ -60,8 +61,17 @@ func Song(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error ", http.StatusInternalServerError)
 		return
 	}
-	w.Header().Add("Content-type", "application/json")
-	json.NewEncoder(w).Encode(artis)
+	tmp, err := template.ParseFiles("./template/artsit.html")
+	if err != nil {
+		fmt.Println(err)
+		http.Error(w, "internal server error ", http.StatusInternalServerError)
+		return
+	}
+	if err := tmp.Execute(w, artis); err != nil {
+		fmt.Println(err)
+		http.Error(w, "internal server error ", http.StatusInternalServerError)
+		return
+	}
 }
 
 func Style(w http.ResponseWriter, r *http.Request) {
