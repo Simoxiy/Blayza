@@ -12,7 +12,16 @@
   </head>
 
   <body>
-    <nav class="nav-bar">Artists</nav>
+    <div class="nav-form">
+      <nav class="nav-bar">Artists</nav>
+      <div class="form-div">
+        <form action="/search" method="get">
+          <label style="display: block;">search for artiste</label>
+          <input type="text" name="name" class="put-search">
+          <input type="submit" class="ipt-bnt" value="search">
+        </form>
+      </div>
+    </div>
     <div class="Parrent-Container">
       <div class="Container">
         {{range .}}
@@ -28,7 +37,9 @@
       </div>
     </div>
     <div class="github">
-      my github <a href="https://github.com/ysnbhb">YSNBHB </a>
+      <div>
+        my github <a href="https://github.com/ysnbhb">YSNBHB </a>
+      </div>
     </div>
   </body>
 </html>

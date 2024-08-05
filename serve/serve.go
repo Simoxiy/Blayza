@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"html/template"
+	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"sync"
 )
@@ -68,10 +70,51 @@ func Song(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := tmp.Execute(w, artis); err != nil {
-		fmt.Println(err)
 		http.Error(w, "internal server error ", http.StatusInternalServerError)
 		return
 	}
+}
+
+func Search(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	if name == "" {
+		http.Error(w, "bad request 400", http.StatusBadRequest)
+		return
+	}
+	tmp, err := template.ParseFiles("template/index.html")
+	if err != nil {
+		http.Error(w, "internal server error ", http.StatusInternalServerError)
+		return
+	}
+	url := "https://groupietrackers.herokuapp.com/api/artists"
+	rep, err := http.Get(url)
+	if err != nil {
+		http.Error(w, "internal server error ", http.StatusInternalServerError)
+		return
+	}
+	bytedata, err := io.ReadAll(rep.Body)
+	if err != nil {
+		http.Error(w, "internal server error ", http.StatusInternalServerError)
+		return
+	}
+	search := fmt.Sprintf(`{[^{}]*"name":\s*"(?i)%v.*?"[^{}]*\}`, name)
+	re := regexp.MustCompile(search)
+	if !re.Match((bytedata)) {
+		tmp.Execute(w, nil)
+		return
+	}
+	searched := re.FindAll((bytedata), 52)
+	artist := []Artist{}
+	arts := Artist{}
+	for i := 0; i < len(searched); i++ {
+		err := json.Unmarshal((searched[i]), &arts)
+		if err != nil {
+			http.Error(w, "internal server error ", http.StatusInternalServerError)
+			return
+		}
+		artist = append(artist, arts)
+	}
+	tmp.Execute(w, artist)
 }
 
 func Style(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +140,7 @@ func GetData(url string, data any) error {
 func (r *Serve) Start() error {
 	http.HandleFunc("/", Artists)
 	http.HandleFunc("/art", Song)
+	http.HandleFunc("/search", Search)
 	http.HandleFunc("/api/", Api)
 	http.HandleFunc("/api/{id}", GetArtist)
 	http.HandleFunc("/css/", Style)

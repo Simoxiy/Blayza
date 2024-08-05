@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      href="https://png.pngtree.com/element_our/20190601/ourmid/pngtree-music-icon-image_1344442.jpg"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <title>search</title>
+  </head>
+  <body>
+    {{if .}}
+    <div>
+      {{range .}}
+      <article class="artcl">
+        <div class="searched">
+          <a href="/art?id={{.Id}}"><img src="{{.Image}}" alt="{{.Name}}" /></a>
+        </div>
+        <div class="info"></div>
+      </article>
+      {{end}}
+    </div>
+    {{else}}
+    <div>artists not found</div>
+    {{end}}
+  </body>
+</html>
